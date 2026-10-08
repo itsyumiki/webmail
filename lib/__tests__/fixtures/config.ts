@@ -10,6 +10,7 @@ export function createConfig(overrides: Partial<ConfigData> = {}): ConfigData {
     oauthClientId: '',
     oauthIssuerUrl: '',
     oauthScopes: '',
+    oauthDiscoveryAddress: '',
     rememberMeEnabled: false,
     settingsSyncEnabled: false,
     stalwartFeaturesEnabled: true,
