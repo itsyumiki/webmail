@@ -38,7 +38,7 @@ on:
         description: "Comma-separated locale subset, e.g. en,de,fr (default: all)"
         required: false
       oauth_discovery_address:
-        description: "SSO-only login: account for OpenID discovery, e.g. @yumiki.me ("none": normal login form)"
+        description: "SSO-only login: account for OpenID discovery, e.g. @yumiki.me, or none for the normal login form"
         required: false
         default: "@yumiki.me"
       demo:
