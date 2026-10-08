@@ -151,6 +151,11 @@ export function buildLiteConfig(env = {}, { target = "static" } = {}) {
   const jmapServerUrl = (env.LITE_JMAP_SERVER_URL ?? "").trim().replace(/\/+$/, "");
   const stalwart = target === "stalwart";
   const customEndpointSet = (env.LITE_ALLOW_CUSTOM_ENDPOINT ?? "") !== "";
+  const demoMode = parseBool(env.LITE_DEMO_MODE, false);
+  // SSO-only login page (`@domain` or `user@domain`). The demo has no
+  // provider, so it never gets one; "none" turns it off explicitly.
+  const rawAddress = (env.LITE_OAUTH_DISCOVERY_ADDRESS ?? "").trim();
+  const oauthDiscoveryAddress = demoMode || rawAddress.toLowerCase() === "none" ? "" : rawAddress;
   return {
     _comment: stalwart
       ? "Bulwark Lite for Stalwart. Read-only inside the Application bundle: to change it, build your own zip (see LITE-README.md). An empty jmapServerUrl means the Stalwart server that serves this page."
@@ -161,9 +166,10 @@ export function buildLiteConfig(env = {}, { target = "static" } = {}) {
       ? { allowCustomJmapEndpoint: parseBool(env.LITE_ALLOW_CUSTOM_ENDPOINT, false) }
       : {}),
     rememberMeEnabled: parseBool(env.LITE_REMEMBER_ME, true),
-    demoMode: parseBool(env.LITE_DEMO_MODE, false),
+    demoMode,
+    ...(oauthDiscoveryAddress ? { oauthDiscoveryAddress } : {}),
     loginShowTotp: true,
-    loginShowVersion: true,
+    loginShowVersion: parseBool(env.LITE_LOGIN_SHOW_VERSION, true),
   };
 }
 
@@ -652,6 +658,11 @@ ${demoMode ? "Demo mode is ON: the login page offers a built-in demo account and
      on the login page, \`false\` never does. Left out, the field shows only
      while \`jmapServerUrl\` is empty.
    - \`rememberMeEnabled\`: \`false\` hides "remember me" (sessions then end with the tab).
+   - \`oauthDiscoveryAddress\` (optional, needs a Stalwart server with an OpenID provider): an
+     account such as \`@example.com\` (or \`user@example.com\`). The login page then shows
+     only the "Sign in with SSO" button, and discovery runs for that account when it is
+     clicked. UI only: the server still accepts whatever it accepts. With it set,
+     "remember me" is on whenever \`rememberMeEnabled\` is.
    Optional keys: \`demoMode\`, \`jmapServers\`, \`jmapServerAutoPickByDomain\`, the login logo/company/link keys and \`loginShow*\` toggles (same names as the Docker env vars, camelCased).
 3. Allow the browser to talk to the mail server (CORS). In Stalwart:
 

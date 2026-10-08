@@ -42,6 +42,7 @@ export const LITE_CONFIG_KEYS = [
   'embeddedMode',
   'parentOrigin',
   'sourceCodeUrl',
+  'oauthDiscoveryAddress',
 ] as const;
 
 /**
@@ -132,6 +133,7 @@ export function applyLiteConfig(raw: unknown, defaults?: { jmapServerUrl?: strin
     embeddedMode: bool(input.embeddedMode, false),
     parentOrigin: str(input.parentOrigin, ''),
     sourceCodeUrl: httpUrlOrEmpty(input.sourceCodeUrl),
+    oauthDiscoveryAddress: str(input.oauthDiscoveryAddress, '').trim(),
     ...LITE_FORCED_FLAGS,
   };
 }

@@ -126,6 +126,18 @@ describe('lite build helpers', () => {
     expect(buildLiteConfig({ LITE_ALLOW_CUSTOM_ENDPOINT: 'false' }).allowCustomJmapEndpoint).toBe(false);
   });
 
+  it('writes oauthDiscoveryAddress and loginShowVersion from the LITE_* inputs', () => {
+    expect(buildLiteConfig({})).not.toHaveProperty('oauthDiscoveryAddress');
+    expect(buildLiteConfig({}).loginShowVersion).toBe(true);
+    const sso = buildLiteConfig({ LITE_OAUTH_DISCOVERY_ADDRESS: ' @yumiki.me ', LITE_LOGIN_SHOW_VERSION: 'false' }, { target: 'stalwart' });
+    expect(sso.oauthDiscoveryAddress).toBe('@yumiki.me');
+    expect(sso.loginShowVersion).toBe(false);
+    expect(applyLiteConfig(sso).oauthDiscoveryAddress).toBe('@yumiki.me');
+    // "none" and the demo never get an SSO-only page.
+    expect(buildLiteConfig({ LITE_OAUTH_DISCOVERY_ADDRESS: 'none' })).not.toHaveProperty('oauthDiscoveryAddress');
+    expect(buildLiteConfig({ LITE_OAUTH_DISCOVERY_ADDRESS: '@yumiki.me', LITE_DEMO_MODE: 'true' })).not.toHaveProperty('oauthDiscoveryAddress');
+  });
+
   it('hides the server field once a deployer fills in jmapServerUrl of the shipped config.json (#1087)', () => {
     const shipped = buildLiteConfig({});
     const edited = { ...shipped, jmapServerUrl: 'https://mail.example.com' };

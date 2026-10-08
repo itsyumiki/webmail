@@ -37,6 +37,10 @@ on:
       locales:
         description: "Comma-separated locale subset, e.g. en,de,fr (default: all)"
         required: false
+      oauth_discovery_address:
+        description: "SSO-only login: account for OpenID discovery, e.g. @yumiki.me ("none": normal login form)"
+        required: false
+        default: "@yumiki.me"
       demo:
         description: "Build the static demo (built-in demo account, no server)"
         type: boolean
@@ -75,6 +79,10 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: ${{ matrix.target == 'static' && inputs.base_path || '' }}
           LITE_JMAP_SERVER_URL: ${{ inputs.jmap_server_url }}
           LITE_APP_NAME: ${{ inputs.app_name }}
+          # Push/release builds have no inputs: they get the repository's
+          # fixed values. A manual run may override the address, or pass "none".
+          LITE_OAUTH_DISCOVERY_ADDRESS: ${{ github.event_name == 'workflow_dispatch' && inputs.oauth_discovery_address || vars.LITE_OAUTH_DISCOVERY_ADDRESS || '@yumiki.me' }}
+          LITE_LOGIN_SHOW_VERSION: "false"
           LITE_LOCALES: ${{ inputs.locales }}
           LITE_DEMO_MODE: ${{ inputs.demo }}
         run: npm run build:lite

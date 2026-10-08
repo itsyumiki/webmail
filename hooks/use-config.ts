@@ -45,6 +45,12 @@ export interface ConfigData {
   embeddedMode: boolean;
   parentOrigin: string;
   sourceCodeUrl: string;
+  /**
+   * Lite only. An account (`@domain` or `user@domain`) used for OpenID discovery
+   * when set; the login page then shows a single SSO button and no email or
+   * password fields. UI only: the server still decides what it accepts.
+   */
+  oauthDiscoveryAddress?: string;
 }
 
 interface AppConfig extends ConfigData {
@@ -185,6 +191,7 @@ export function useConfig(): AppConfig {
     embeddedMode: configCache?.embeddedMode || false,
     parentOrigin: configCache?.parentOrigin || '',
     sourceCodeUrl: configCache?.sourceCodeUrl || '',
+    oauthDiscoveryAddress: configCache?.oauthDiscoveryAddress || '',
     isLoading: !configCache,
     error: null,
   });
@@ -229,6 +236,7 @@ export function useConfig(): AppConfig {
         embeddedMode: configCache.embeddedMode,
         parentOrigin: configCache.parentOrigin,
         sourceCodeUrl: configCache.sourceCodeUrl,
+        oauthDiscoveryAddress: configCache.oauthDiscoveryAddress || '',
         isLoading: false,
         error: null,
       });
@@ -274,6 +282,7 @@ export function useConfig(): AppConfig {
           embeddedMode: data.embeddedMode,
           parentOrigin: data.parentOrigin,
           sourceCodeUrl: data.sourceCodeUrl,
+          oauthDiscoveryAddress: data.oauthDiscoveryAddress || '',
           isLoading: false,
           error: null,
         });

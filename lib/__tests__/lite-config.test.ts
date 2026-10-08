@@ -15,6 +15,17 @@ describe('applyLiteConfig (config.json for the static build)', () => {
     expect(config.demoMode).toBe(false);
   });
 
+  it('reads oauthDiscoveryAddress trimmed, and defaults it to empty', () => {
+    expect(applyLiteConfig({}).oauthDiscoveryAddress).toBe('');
+    expect(applyLiteConfig({ oauthDiscoveryAddress: '  @yumiki.me ' }).oauthDiscoveryAddress).toBe('@yumiki.me');
+    expect(applyLiteConfig({ oauthDiscoveryAddress: 42 }).oauthDiscoveryAddress).toBe('');
+    // SSO-only is UI state: the server-only flags stay pinned.
+    const config = applyLiteConfig({ oauthDiscoveryAddress: '@yumiki.me', oauthOnly: true, oauthEnabled: true });
+    expect(config.oauthOnly).toBe(false);
+    expect(config.oauthEnabled).toBe(false);
+    expect(config.oauthClientId).toBe('');
+  });
+
   it('allows a custom endpoint by default only when no server is configured', () => {
     expect(applyLiteConfig({}).allowCustomJmapEndpoint).toBe(true);
     expect(applyLiteConfig({ jmapServerUrl: 'https://mail.example.com' }).allowCustomJmapEndpoint).toBe(false);

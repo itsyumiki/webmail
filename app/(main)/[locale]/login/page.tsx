@@ -157,7 +157,7 @@ function LoginPageContent() {
   const isMobileHandoff = Boolean(mobileRedirectUri);
   const { login, loginWithToken, loginDemo, isLoading, error, clearError, isAuthenticated } = useAuthStore();
   const { theme, setTheme, initializeTheme } = useThemeStore(useShallow((s) => ({ theme: s.theme, setTheme: s.setTheme, initializeTheme: s.initializeTheme })));
-  const { appName, jmapServerUrl: configuredServerUrl, oauthEnabled, oauthOnly, oauthClientId: globalOauthClientId, oauthIssuerUrl: globalOauthIssuerUrl, oauthScopes, rememberMeEnabled, devMode, demoMode, loginLogoLightUrl, loginLogoDarkUrl, loginCompanyName, loginImprintUrl, loginPrivacyPolicyUrl, loginWebsiteUrl, loginLogoMaxHeight, loginLogoMaxWidth, loginShowHeading, loginShowSubtitle, loginShowTotp, loginShowTokenLogin, loginShowVersion, isLoading: configLoading, error: configError, autoSsoEnabled, embeddedMode: _embeddedMode, allowCustomJmapEndpoint, jmapServers, jmapServerAutoPickByDomain } = useConfig();
+  const { appName, jmapServerUrl: configuredServerUrl, oauthEnabled, oauthOnly, oauthClientId: globalOauthClientId, oauthIssuerUrl: globalOauthIssuerUrl, oauthScopes, rememberMeEnabled, devMode, demoMode, loginLogoLightUrl, loginLogoDarkUrl, loginCompanyName, loginImprintUrl, loginPrivacyPolicyUrl, loginWebsiteUrl, loginLogoMaxHeight, loginLogoMaxWidth, loginShowHeading, loginShowSubtitle, loginShowTotp, loginShowTokenLogin, loginShowVersion, oauthDiscoveryAddress, isLoading: configLoading, error: configError, autoSsoEnabled, embeddedMode: _embeddedMode, allowCustomJmapEndpoint, jmapServers, jmapServerAutoPickByDomain } = useConfig();
   const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
 
   // Login logo sizing: when a max height/width is configured, drop the fixed
@@ -285,6 +285,10 @@ function LoginPageContent() {
   const liteSsoRequired = liteDomain !== "" && liteOAuthByDomain?.domain === liteDomain && liteOAuthByDomain.discovery?.external === true;
   // The admin gave the Application an OAuth client: offer SSO next to the form.
   const liteSsoOffered = LITE_OAUTH_AVAILABLE && !liteSsoRequired && getLiteInjectedClientId() !== "";
+  // config.json names the account to run discovery for (`@domain` or
+  // `user@domain`): the page is just the SSO button, like the full build's
+  // oauthOnly layout. UI only; the server still decides what it accepts.
+  const liteSsoOnly = LITE_OAUTH_AVAILABLE && !!oauthDiscoveryAddress;
 
   useEffect(() => {
     if (serverUrl) {
@@ -661,8 +665,12 @@ function LoginPageContent() {
 
   // Lite on Stalwart: the redirect flow without a server (lib/auth/lite-oauth.ts).
   // Discovery needs the account, which decides the provider.
-  const startLiteOAuth = async (liteServerUrl: string) => {
-    const account = formData.username.trim();
+  // `configAddress` is config.json's oauthDiscoveryAddress: it stands in for the
+  // typed account, is never sent on as login_hint, and keeps the session
+  // persistent whenever remember-me is enabled (there is no box to tick).
+  const startLiteOAuth = async (liteServerUrl: string, configAddress?: string) => {
+    const configured = configAddress?.trim() ?? "";
+    const account = configured || formData.username.trim();
     if (!account) {
       inputRef.current?.focus();
       inputRef.current?.reportValidity();
@@ -695,7 +703,7 @@ function LoginPageContent() {
       tokenEndpoint: discovery.metadata.token_endpoint,
       clientId,
       redirectUri,
-      persistent: rememberMeEnabled && rememberMe,
+      persistent: configured ? rememberMeEnabled : rememberMeEnabled && rememberMe,
       revocationEndpoint: discovery.metadata.revocation_endpoint,
     });
 
@@ -707,7 +715,7 @@ function LoginPageContent() {
     authUrl.searchParams.set("state", state);
     authUrl.searchParams.set("code_challenge", challenge);
     authUrl.searchParams.set("code_challenge_method", "S256");
-    authUrl.searchParams.set("login_hint", account);
+    if (!configured) authUrl.searchParams.set("login_hint", account);
     if (isAddAccountMode) {
       authUrl.searchParams.set("prompt", "select_account");
     }
@@ -722,7 +730,7 @@ function LoginPageContent() {
    */
   const handleOAuthLogin = async (target?: PublicJmapServerEntry) => {
     if (LITE_OAUTH_AVAILABLE && !target) {
-      await startLiteOAuth(probeTarget);
+      await startLiteOAuth(probeTarget, liteSsoOnly ? oauthDiscoveryAddress : undefined);
       return;
     }
     const server = target ?? selectedServer;
@@ -1253,11 +1261,11 @@ function LoginPageContent() {
                   Dev mode - logging in as dev@localhost
                 </p>
               </div>
-            ) : oauthOnly ? (
+            ) : oauthOnly || liteSsoOnly ? (
               /* OAuth-only mode: server picker (if any) plus the SSO button */
               <div className="space-y-4">
                 {serverPicker}
-                {oauthMetadata ? (
+                {oauthMetadata || liteSsoOnly ? (
                   <Button
                     type="button"
                     className="w-full h-11 font-medium text-[15px] bg-primary hover:bg-primary/90 transition-all duration-200 rounded-xl shadow-md shadow-primary/15 hover:shadow-lg hover:shadow-primary/20"
@@ -1290,6 +1298,18 @@ function LoginPageContent() {
                 ) : (
                   <div className="flex justify-center py-4">
                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                )}
+                {liteSsoOnly && liteOAuthFailed && (
+                  <div className="p-3 rounded-xl border border-warning/20 bg-warning/5 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-warning/15 text-warning flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <AlertCircle className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0 self-center">
+                      <p className="text-sm text-warning leading-relaxed">
+                        {t("error.oauth_discovery_failed")}
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

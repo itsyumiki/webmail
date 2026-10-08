@@ -63,6 +63,8 @@ const configValidators = {
   embeddedMode: isBoolean,
   parentOrigin: isString,
   sourceCodeUrl: isString,
+  // Optional: only the Lite build's config.json carries it.
+  oauthDiscoveryAddress: (value): value is string | undefined => value === undefined || isString(value),
 } satisfies Validators<ConfigData>;
 
 /**
