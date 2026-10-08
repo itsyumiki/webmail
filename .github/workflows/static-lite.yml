@@ -82,7 +82,6 @@ jobs:
           # Push/release builds have no inputs: they get the repository's
           # fixed values. A manual run may override the address, or pass "none".
           LITE_OAUTH_DISCOVERY_ADDRESS: ${{ github.event_name == 'workflow_dispatch' && inputs.oauth_discovery_address || vars.LITE_OAUTH_DISCOVERY_ADDRESS || '@yumiki.me' }}
-          LITE_LOGIN_SHOW_VERSION: "false"
           LITE_LOCALES: ${{ inputs.locales }}
           LITE_DEMO_MODE: ${{ inputs.demo }}
         run: npm run build:lite
